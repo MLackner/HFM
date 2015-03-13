@@ -1,0 +1,65 @@
+clear,clc,close all
+
+% Ambient Temperature in K
+T0 = 300;
+% Dimensions in m
+d.x = 0.001;
+d.y = 0.001;
+d.z = 0.001;
+% Elements per Dimension
+N.x = 9;
+N.y = 9;
+N.z = 9;
+
+% Distance between elements
+dx = d.x/N.x;
+dy = d.y/N.y;
+dz = d.z/N.z;
+
+% Area per element per Dimension
+A.x = dy*dz;
+A.y = dx*dz;
+A.z = dx*dy;
+
+% Volume of one Element in m^3
+V = d.x*d.y*d.z;
+
+% 3D Matrix
+M = T0*ones(N.x+2,N.y+2,N.z+2);
+
+%% Time settings
+% Total simulation time
+t = 20;
+% Number of time steps
+Nt = 500;
+% Time step
+dt = t/Nt;
+% Adiabatic?
+adiabatic = true;
+% Plot?
+p = true;
+
+%% Material
+% Thermal Conductivity in W/m/K
+lambda = 80;
+% Heat capacity in J/kg/K
+c = 449;
+% Density in kg/m^3
+rho = 7874;
+
+%% Heat induction
+% Induced energy in J
+Ei = 100;
+% Place of induction
+x = [round(N.x/2) round(N.y/2) round(N.z/2)];
+% Calculate temperature increase due to induced heat
+% Mass of one volume element is m=rho*V
+dT = Ei/c/rho/V;
+% Induce heat
+M(x(1)+1,x(2)+1,x(3)+1) = M(x(1)+1,x(2)+1,x(3)+1) + dT;
+
+Y = heatflow(M,Nt,dt,N,A,V,dx,dy,dz,lambda,c,rho,adiabatic,p,x);
+
+%% Calculate total excess heat remaining in system
+% Total elements of matrix
+Ntotal = 

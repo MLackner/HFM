@@ -1,0 +1,6 @@
+_mexFunction
+_emlrtMexFcnProperties
+_heatflux3n
+_heatflux3n_initialize
+_heatflux3n_terminate
+_heatflux3n_atexit

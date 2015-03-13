@@ -1,0 +1,83 @@
+function Y = heatflow(M,Nt,dt,N,A,V,dx,dy,dz,lambda,c,rho,adiabatic,plot)
+
+%% Make waitbar
+h = waitbar(0,'1','Name','Calculating heat flow...',...
+    'CreateCancelBtn',...
+    'setappdata(gcbf,''canceling'',1)');
+setappdata(h,'canceling',0)
+
+%% Plot preparations
+if plot
+    
+
+%% Calculation
+for i=1:Nt
+    
+    % Waitbar
+    % Check for Cancel button press
+    if getappdata(h,'canceling')
+        break
+    end
+    % Update waitbar
+    waitbar(i/Nt,h,sprintf('%g%%',round(i/Nt*1000)/10))
+    
+    % In case of an adiabatic system
+    if adiabatic
+        % Set the temperatures at the edges of the matrix equal to one
+        % element further in.
+        % Y Dimension
+        for k=2:N.y+1
+            % Z Dimension
+            for l=2:N.z+1
+                M(1,k,l) = M(2,k,l);
+                M(end,k,l) = M(end-1,k,l);
+            end
+        end
+        % X Dimension
+        for j=2:N.x+1
+            % Z Dimension
+            for l=2:N.z+1
+                M(j,1,l) = M(j,2,l);
+                M(j,end,l) = M(j,end-1,l);
+            end
+        end
+        % Y Dimension
+        for k=2:N.y+1
+            % X Dimension
+            for j=2:N.x+1
+                M(j,k,1) = M(j,k,2);
+                M(j,k,end) = M(j,k,end-1);
+            end
+        end
+    end
+    
+    % Update Update Matrix
+    Y = M;
+    
+    % X Dimension
+    for j=2:N.x+1
+        % Y Dimension
+        for k=2:N.y+1
+            % Z Dimension
+            for l=2:N.z+1
+                % Mean Temperature
+                meanT = mean([M(j,k,l+1) M(j,k,l-1)...
+                    M(j,k+1,l) M(j,k-1,l)...
+                    M(j+1,k,l) M(j-1,k,l)]);
+                % Temperature differece in K
+                dT = M(j,k,l) - meanT;
+                % Heat flow in J
+                Q = heatflux(lambda,dx,dy,dz,dT,dt,A);
+                % Heat to temperature
+                T = Q/c/rho/V;
+                Y(j,k,l) = M(j,k,l) + T;
+            end
+        end
+    end 
+    M = Y;
+end
+
+%% Close waitbar
+delete(h)
+
+end
