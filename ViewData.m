@@ -3,6 +3,10 @@
 fileInfo = dir([pathName,folderName,'/*.mat']);
 numFiles = length(fileInfo);
 fullPath = [pathName,folderName,fileName];
+fprintf('Getting maximum and minimum temperatures of data set...\n')
+[maxT,minT] = getMaxMin(numFiles,fullPath);
+fprintf('\tDone.\n')
+
 %% Make an animated 3D plot of the temperature data with time
 
 stepSize = 1;
@@ -15,23 +19,6 @@ M(1,1,1) = M(1,1,1)*1.0000000000001;
 
 % Define data
 yData = M(:,:,:);
-
-% Evaluate maximum and minimum temperature of the whole data set. 1st row
-% is max value of each time step, 2nd row is min value.
-% Preallocate
-maxMinT = zeros(2,numFiles);
-% Loop through all time steps
-for i=1:numFiles
-    % Load Time Step
-    M = loadTimeStep(fullPath,i);
-    % Save maximum value
-    maxMinT(1,i) = max(M(:));
-    % Save minimum value
-    maxMinT(2,i) = min(M(:));
-end
-% Get absolute max and min
-maxT = max(maxMinT(:));
-minT = min(maxMinT(:));
 
 % Make figure
 fh = figure;
@@ -62,8 +49,9 @@ for i=1:stepSize:numFiles
     p(1).CData = squeeze(Xdat);
     p(2).CData = squeeze(Ydat);
     p(3).CData = squeeze(Zdat);
-    title(num2str(i))
-    pause(0.2)
+    timeStamp = (i-1)*t/Nt*saveSteps*1e12;
+    title(sprintf('%g ps',timeStamp))
+    pause(0.001)
     
     % Delete data set
     clear M
@@ -73,23 +61,6 @@ end
 
 % Load data
 M = loadTimeStep(fullPath,1);
-
-% Evaluate maximum and minimum temperature of the whole data set. 1st row
-% is max value of each time step, 2nd row is min value.
-% Preallocate
-maxMinT = zeros(2,numFiles);
-% Loop through all time steps
-for i=1:numFiles
-    % Load Time Step
-    M = loadTimeStep(fullPath,i);
-    % Save maximum value
-    maxMinT(1,i) = max(M(:));
-    % Save minimum value
-    maxMinT(2,i) = min(M(:));
-end
-% Get absolute max and min
-maxT = max(maxMinT(:));
-minT = min(maxMinT(:));
 
 layer1 = 10;
 layer2 = 2;
@@ -137,23 +108,6 @@ stepSize = 1;
 % Load data
 M = loadTimeStep(fullPath,1);
 
-% Evaluate maximum and minimum temperature of the whole data set. 1st row
-% is max value of each time step, 2nd row is min value.
-% Preallocate
-maxMinT = zeros(2,numFiles);
-% Loop through all time steps
-for i=1:numFiles
-    % Load Time Step
-    M = loadTimeStep(fullPath,i);
-    % Save maximum value
-    maxMinT(1,i) = max(M(:));
-    % Save minimum value
-    maxMinT(2,i) = min(M(:));
-end
-% Get absolute max and min
-maxT = max(maxMinT(:));
-minT = min(maxMinT(:));
-
 fh = figure;
 
 xslice = floor((size(M,1)+2)/2);
@@ -175,8 +129,9 @@ for i=1:stepSize:numFiles
     % Update plot
     yData = squeeze(M(xslice,yslice,:));
     p.YData = yData;
-    title(int2str(i))
-    pause(0.2)
+    timeStamp = (i-1)*t/Nt*saveSteps*1e12;
+    title(sprintf('%g ps',timeStamp))
+    pause(0.001)
 end
 
 %% 2D plot T on surface
@@ -188,22 +143,20 @@ zslice(2) = Nlayer(1);
 zslice(3) = Nlayer(2);
 zslice(4) = Nlayer(3);
 
-stepSize = 1;
-
-timeData = (dt:dt*100:t)*1e12;
+timeData = (0:t/Nt*saveSteps:t)*1e12;
 % Preallocate temperature data
-tempData = zeros(length(Nlayer)+1,400);
-for i=0:numFiles
-    if i==0
-        i=1;
-    end
+tempData = zeros(length(Nlayer)+1,length(timeData));
+for i=1:numFiles
     M = loadTimeStep(fullPath,i);
     for j=1:length(Nlayer)+1
-        tempData(j,ceil(i/100)) = squeeze(M(xslice,yslice,zslice(j)));
+        tempData(j,i) = squeeze(M(xslice,yslice,zslice(j)));
     end
 end
 
 figure
 p = plot(timeData,tempData);
 xlabel('Time [ps]'), ylabel('Temperature [K]')
-ylim([min(tempData) max(tempData)])
+ylim([min(tempData(:)) max(tempData(:))])
+xlim([timeData(1) timeData(end)])
+% Legend
+legend('Surface',[names{1},'/',names{2}],[names{2},'/',names{3}],'End of system')

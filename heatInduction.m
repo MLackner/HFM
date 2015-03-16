@@ -1,4 +1,4 @@
-function P = heatInduction(t)
+function P = heatInduction(t,pulseEnergy)
 % Define the power of induction in J/s dependend on time. Returns the
 % energy induced in given time step
 
@@ -21,16 +21,19 @@ function P = heatInduction(t)
 % Preallocate arrays
 P = zeros(1,length(t));
 
+% Peak time
+tm = 12e-12;
+
 for i=1:length(t)
-    if t(i) <= 25e-12
-        P(i) = 0.04e12/25e-12*t(i);
-    elseif t(i) < 50e-12
-        P(i) = -(0.04e12/25e-12)*t(i)+0.08e12;
+    if t(i) <= tm
+        P(i) = t(i)/tm^2;
+    elseif t(i) < 2*tm
+        P(i) = -t(i)/tm^2+(2/tm);
     else
         P(i) = 0;
     end
 end
 
-P = P*100e-6;
+P = P*pulseEnergy;
 
 end

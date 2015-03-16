@@ -95,10 +95,10 @@ end
 savePath = [savePath,fileName];
 
 %% Prerun model for time estimate
-estimateRunTime(M,Nt,dt,A,d,K,C,MV,adiabatic,I,savePath,saveSteps)
+estimateRunTime(M,Nt,dt,A,d,K,C,MV,pulseEnergy,adiabatic,I,savePath,saveSteps)
 
 %% Run model
-[Y] = heatflow(M,Nt,dt,A,d,K,C,MV,adiabatic,I,savePath,saveSteps);
+[Y] = heatflow(M,Nt,dt,A,d,K,C,MV,pulseEnergy,adiabatic,I,savePath,saveSteps);
 
 %% Calculate total excess heat remaining in system
 sumUpEnergy(Y,T0,C,MV)

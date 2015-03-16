@@ -1,4 +1,4 @@
-function [M] = heatflow(M,Nt,dt,A,d,K,C,MV,adiabatic,I,savePath,saveSteps)
+function [M] = heatflow(M,Nt,dt,A,d,K,C,MV,pulseEnergy,adiabatic,I,savePath,saveSteps)
 
 
 fprintf('Calculating...\n')
@@ -14,7 +14,7 @@ for i=1:Nt
     
     %% Heat induction
     % Engergy function
-    Eind = heatInduction(t)*dt;
+    Eind = heatInduction(t,pulseEnergy)*dt;
     % Induce
     M = M + I.*Eind./C./MV;
     
@@ -31,7 +31,7 @@ for i=1:Nt
     M(2:end-1,2:end-1,2:end-1) = M(2:end-1,2:end-1,2:end-1) +...
         HF./C(2:end-1,2:end-1,2:end-1)./MV(2:end-1,2:end-1,2:end-1);
     
-    %% Save data
+    % Save data
     if rem(i,saveSteps)==0 || i == 1
         % Set filename
         fileName = [savePath,int2str(j)];

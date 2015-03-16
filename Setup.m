@@ -7,9 +7,9 @@ clc,clear,close all
 
 %% Time settings
 % Total simulation time in s
-t = 500e-12;
+t = 2000e-12;
 % Number of time steps
-Nt = 10000;
+Nt = 40000;
 
 %% System Dimensions
 % Length of x dimension in m
@@ -30,7 +30,7 @@ N(3) = 80;
 T0 = 300;
 % Adiabatic edges? (boolean - true/false)
 % style: adiabatic = [X1 X2 Y1 Y2 Z1 Z2] (See description below)
-adiabatic = [true true true true true true];
+adiabatic = [false false false false true false];
 
 %         |B|
 %         |e|
@@ -89,13 +89,13 @@ tProfile = 'triangle';
 
 % Define path ([String] If you set the path to 'pwd' the folder of this
 % file will be used.)
-pathName = '/Users/lackner/NichtLolaWegenGrosseDaten/HeatFlowFEA';
+pathName = '/Users/lackner/NichtLolaWegenGrosseDaten/SiTi100150';
 % Set the folder name (Doesn't have to be existing)
 folderName = '/savedData';
 % Set the filename prefix
 fileName = '/data';
 % Set the number of time steps after which the simulation is saved
-saveSteps = 500;
+saveSteps = 20;
 
 %% Run simulation
 %

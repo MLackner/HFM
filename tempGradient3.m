@@ -1,5 +1,8 @@
 function dT = tempGradient3(M)
 
+% Preallocate matrix
+dT = zeros(size(M,1)-2,size(M,2)-2,size(M,3)-2,6);
+
 % Y1 Difference
 dT(:,:,:,3) = M(2:end-1,2:end-1,2:end-1) - M(2:end-1,1:end-2,2:end-1);
 % X1 Difference
