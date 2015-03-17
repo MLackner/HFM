@@ -53,7 +53,7 @@ names = {'Si','Ti','BK7'};
 % Thickness in m (The thickness of the last layer will be defined by the
 % thicknesses of the first two layers and the length of the z dimension of
 % the system.)
-dLayer = [100e-9 150e-9];
+dLayer = [100e-9 100e-9];
 % Thermal conductivity in W/m/K
 k = [149 22 1.114];
 % Heat capacity in J/kg/K

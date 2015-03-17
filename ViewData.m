@@ -3,6 +3,8 @@
 fileInfo = dir([pathName,folderName,'/*.mat']);
 numFiles = length(fileInfo);
 fullPath = [pathName,folderName,fileName];
+
+%% Calculate bounds
 fprintf('Getting maximum and minimum temperatures of data set...\n')
 [maxT,minT] = getMaxMin(numFiles,fullPath);
 fprintf('\tDone.\n')
