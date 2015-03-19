@@ -17,7 +17,7 @@ XYsize = size(XY);
 % Define sigma (variance) for gauss function.
 % Length of each volume element
 dx = l(1)/N(1);
-sigma = round(beamDia/dx/3);
+sigma = round(beamDia/dx);
 center = [floor((N(1)+2)/2) floor((N(2)+2)/2)];
 I(:,:,1) = gaussC(R,C, sigma, center);
 
@@ -37,10 +37,15 @@ ylabel('I/I_0')
 title('Intensity distribution in z direction')
 subplot(1,2,2)
 zData = I(:,:,1);
-mesh(zData)
+s = surf(zData);
+s.LineStyle = 'none';
 xlabel('X')
 ylabel('Y')
 zlabel('I/I_0')
+xlim([2 N(1)+1])
+ylim([2 N(2)+1])
+zlim([0 inf])
+view([0 90])
 title('Intensity distribution in xy plane')
 
 %% Calculate Absorption for every layer
