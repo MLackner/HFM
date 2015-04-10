@@ -16,7 +16,7 @@ updateInterface();
 
 %-------------------------------------------------------------------------%
     function data = createData()
-        data = [];
+        data.MonoFont = get(0, 'FixedWidthFontName');
         
     end % Create Data
 
@@ -54,10 +54,23 @@ updateInterface();
         set( mainLayout, 'Widths', [-1,-2]  );
         
         
-        % + Create the controls
+        % + Create the boundary condition controls
         controlLayout = uix.VBox( 'Parent', controlPanel, ...
             'Padding', 3, 'Spacing', 3 );
-        gui.ListBox = uitable( 'Parent', controlLayout);
+        gui.BCondInfo = uicontrol( 'Parent', controlLayout, ...
+            'Style', 'text', 'FontName', data.MonoFont, ...
+            'BackgroundColor', 'white' );
+        controlButtons = uix.HBox( 'Parent', controlLayout', ...
+            'Padding', 3, 'Spacing', 3 );
+        gui.BCondEdit = uicontrol( 'Parent', controlButtons, ...
+            'Style', 'pushbutton', 'Callback', @onBCondEdit, ...
+            'String', 'Edit BC' );
+        gui.BCondLoad = uicontrol( 'Parent', controlButtons, ...
+            'Style', 'pushbutton', 'Callback', @onBCondLoad, ...
+            'String', 'Load BC' );
+        
+        % + Adjust the Heigths
+        set( controlLayout, 'Heights', [-1 30] );
         
         % + Create the view
         p = gui.ViewContainer;
@@ -95,4 +108,18 @@ updateInterface();
         % User wants to quit out of the application
         delete( gui.Window );
     end % onExit
+
+    function onBCondEdit
+        % A get file interface is shown with the default bc as default
+        % choice. On selection the *.m file opens and on execution it saves
+        % to as specified in a save file dialog. The saved parameters get
+        % loaded into the 'data' structure and are displayed in the BC Info
+        % panel.
+        
+        % Open the get file dialog
+        
+    end % onBCondEdit
+
+    function onBCondLoad
+        % Load boundary conditions from a specific setup file.
 end % GUI main function
