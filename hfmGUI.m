@@ -16,6 +16,9 @@ updateInterface();
 
 %-------------------------------------------------------------------------%
     function data = createData()
+        % Add folders to search path
+        addpath([pwd,'/layout'], [pwd,'/data'])
+        % Get the system defined monospaced font
         data.MonoFont = get(0, 'FixedWidthFontName');
         
     end % Create Data
@@ -109,17 +112,26 @@ updateInterface();
         delete( gui.Window );
     end % onExit
 
-    function onBCondEdit
-        % A get file interface is shown with the default bc as default
-        % choice. On selection the *.m file opens and on execution it saves
-        % to as specified in a save file dialog. The saved parameters get
-        % loaded into the 'data' structure and are displayed in the BC Info
-        % panel.
+    function onBCondEdit( ~, ~)
+        % On button press the *.m file opens and on execution it saves
+        % to as specified in a save file dialog.
         
-        % Open the get file dialog
+        % Open the default setup file
+        edit data/defaultSetup.m
         
     end % onBCondEdit
 
     function onBCondLoad
         % Load boundary conditions from a specific setup file.
+        [FileName,PathName,~] = ...
+            uigetfile( '*mat','Load Boundary Conditions', ...
+            '/data/' );
+        
+        % Load the data
+        data.bc = load( [PathName, '/', FileName] );
+        
+        % Update the interface
+        updateInterface();
+        
+    end %onCondLoad
 end % GUI main function
