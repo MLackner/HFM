@@ -38,7 +38,14 @@ updateInterface();
         
         % + File menu
         gui.FileMenu = uimenu( gui.Window, 'Label', 'File' );
-        uimenu( gui.FileMenu, 'Label', 'Exit', 'Callback', @onExit );        
+        uimenu( gui.FileMenu, 'Label', 'Run Simulation', ...
+            'Callback', @onRunSimulation );
+        uimenu( gui.FileMenu, 'Label', 'Edit Settings ...', ...
+            'Separator', 'on', 'Callback', @onBCondEdit );
+        uimenu( gui.FileMenu, 'Label', 'Load Settings ...', ...
+            'Callback', @onBCondLoad );
+        uimenu( gui.FileMenu, 'Label', 'Exit', ...
+            'Separator', 'on', 'Callback', @onExit );        
         
         % Arrange the main interface
         mainLayout = uix.HBoxFlex( 'Parent', gui.Window, 'Spacing', 3 );
@@ -156,4 +163,13 @@ updateInterface();
         updateInterface();
         
     end %onCondLoad
+
+    function onRunSimulation( ~, ~ )
+        % Run the Simulation. First we make the variables in the data
+        % struct easier to access
+        
+        % Run the simulation
+        ProcessParametersFcn(data.bc);
+        
+    end % onRunSimulation
 end % GUI main function
