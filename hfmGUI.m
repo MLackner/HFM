@@ -42,7 +42,7 @@ updateInterface();
             'Name', 'HeaFlMoFoLaySy', ...
             'NumberTitle', 'off', ...
             'MenuBar', 'none', ...
-            'Toolbar', 'none', ...
+            'Toolbar', 'figure', ...
             'HandleVisibility', 'off', ...
             'Position', [200, 200, 1200, 400] );
         
@@ -105,6 +105,7 @@ updateInterface();
             'Padding', 3, 'Spacing', 3 );
         gui.ViewMode = uicontrol( 'Parent', viewControlLayout, ...
             'Style', 'listbox', ...
+            'Callback', @onViewSelect, ...
             'String', data.viewModes );
         gui.SelectData = uicontrol( 'Parent', viewControlLayout, ...
             'Style', 'pushbutton', ...
@@ -221,4 +222,41 @@ updateInterface();
         ProcessParametersFcn(data.bc);
         
     end % onRunSimulation
+    
+    % View Control Panel
+    %---------------------------------------------------------------------%
+    function onViewSelect( ~, ~ )
+        % Get the selected view mode in the view control listbox. Pass this
+        % value to the appropriate draw funtion that actually plots the
+        % data.
+        
+        % Get the selection in the listbox
+        val = get( gui.ViewMode, 'Value' );
+        % Go to the appropriate function
+        if val == 1
+            drawMaterials();
+        elseif val == 2
+            drawBeamProfileS();
+        elseif val == 3
+            drawBeamProfileT();
+        elseif val == 4
+            drawAbsorption();
+        else
+            return
+        end
+        
+    end % onViewSelect
+
+%
+%   Draw Funtions
+%
+%-------------------------------------------------------------------------%
+    function drawMaterials
+        % 3D view of the outer edges of the systems. The layers are
+        % represented by different colors.
+        
+        % Get the Material matrix
+        
+    end % drawMaterials
+    
 end % GUI main function
