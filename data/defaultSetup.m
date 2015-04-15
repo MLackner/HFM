@@ -72,7 +72,7 @@ absCoeff = [241060 7.9156e+7 0.18332];
 %
 
 % Diameter in m
-beamDia = 200e-9;
+beamDia = 200e-6;
 % Energy per pulse in J
 pulseEnergy = 1e-6;
 % Pulse duration in s

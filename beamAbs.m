@@ -1,4 +1,4 @@
-function A = beamAbs(l,N,beamDia,AC)
+function [A,I] = beamAbs(l,N,beamDia,AC)
 % Returns the absorption matrix of a beam in xy plane
 
 %% Preallocate Intensity matrix I
@@ -27,26 +27,26 @@ for i=2:N(3)+1
 end
 
 %% Plot intensity
-figure
-subplot(1,2,1)
-xData = 0:l(3)/N(3):l(3);
-yData = squeeze(I(center(1),center(2),2:end));
-plot(xData,yData)
-xlabel('Z [m]')
-ylabel('I/I_0')
-title('Intensity distribution in z direction')
-subplot(1,2,2)
-zData = I(:,:,1);
-s = surf(zData);
-s.LineStyle = 'none';
-xlabel('X')
-ylabel('Y')
-zlabel('I/I_0')
-xlim([2 N(1)+1])
-ylim([2 N(2)+1])
-zlim([0 inf])
-view([0 90])
-title('Intensity distribution in xy plane')
+% figure
+% subplot(1,2,1)
+% xData = 0:l(3)/N(3):l(3);
+% yData = squeeze(I(center(1),center(2),2:end));
+% plot(xData,yData)
+% xlabel('Z [m]')
+% ylabel('I/I_0')
+% title('Intensity distribution in z direction')
+% subplot(1,2,2)
+% zData = I(:,:,1);
+% s = surf(zData);
+% s.LineStyle = 'none';
+% xlabel('X')
+% ylabel('Y')
+% zlabel('I/I_0')
+% xlim([2 N(1)+1])
+% ylim([2 N(2)+1])
+% zlim([0 inf])
+% view([0 90])
+% title('Intensity distribution in xy plane')
 
 %% Calculate Absorption for every layer
 % Preallocate array

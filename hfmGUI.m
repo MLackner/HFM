@@ -27,8 +27,7 @@ updateInterface();
             'Materials', ...
             'Beam Profile (spatial)', ...
             'Beam Profile (time)', ...
-            'Beam Absorption', ...
-            'Thermal Conductivity' };
+            'Beam Absorption' };
         
     end % Create Data
 
@@ -181,6 +180,108 @@ updateInterface();
         close( fig );
     end % redrawDemo
 %-------------------------------------------------------------------------%
+    function processParameters()
+        % Process the parameters that are passed via the setup file/script.
+                
+        % Calculate the distance betweeen two simulated elements. Output is 
+        % an
+        % array d = [xdir -xdir ydir -ydir zdir -zdir] where xdir and -xdir etc.
+        % are the same values.
+        data.pr.d(1:2) = data.bc.l(1)/data.bc.N(1);
+        data.pr.d(3:4) = data.bc.l(2)/data.bc.N(2);
+        data.pr.d(5:6) = data.bc.l(3)/data.bc.N(3);
+        
+        % Calculate the volume of one element
+        data.pr.V = data.pr.d(1)*data.pr.d(3)*data.pr.d(5);
+        
+        % Calculate the area per dimension (Same format as distances between
+        % elements.
+        % X Dimension
+        data.pr.A(1:2) = data.pr.d(3)*data.pr.d(5);
+        % Y Dimension
+        data.pr.A(3:4) = data.pr.d(1)*data.pr.d(5);
+        % Z Dimension
+        data.pr.A(5:6) = data.pr.d(1)*data.pr.d(3);
+        
+        % Calculate time of each time step
+        data.pr.dt = data.bc.t/data.bc.Nt;
+        %%
+        % Generate a Matrix with ambient temperatures as base for the calculations.
+        % The size of the matrix is two elements bigger in every dimension because
+        % the edges can either be adiabatic or have a constant temperature.
+        data.pr.M = ...
+            zeros(data.bc.N(1)+2,data.bc.N(2)+2,data.bc.N(3)+2) ...
+            + data.bc.T0;
+        %%
+        % Calculate the layer where the materials change.
+        data.bc.dLayer(length(data.bc.dLayer)+1) = ...
+            data.bc.l(3) - sum(data.bc.dLayer);
+        %%
+        % Preallocation
+        data.pr.Nlayer = zeros(1,length(data.bc.dLayer));
+        for i=1:length(data.bc.dLayer)
+            if i==1
+                NlayerPrev = 1;
+            else
+                NlayerPrev = data.pr.Nlayer(i-1);
+            end
+            data.pr.Nlayer(i) = ...
+                round(data.bc.dLayer(i)/data.pr.d(6)) + NlayerPrev;
+            if i==length(data.bc.dLayer)
+                % Make sure the whole matrix is filled
+                data.pr.Nlayer(i) = size(data.pr.M,3);
+            end
+        end
+        %%
+        % Define a Material matrix in the same size as the temperature 
+        % matrix M.
+        data.pr.Mat = zeros(size(data.pr.M));
+        % Define Materials
+        for i=length(data.bc.dLayer):-1:1
+            data.pr.Mat(:,:,1:data.pr.Nlayer(i)) = i;
+        end
+        %%
+        % For each material calculate the mass of a single volume element.
+        data.pr.m = zeros(1,length(data.bc.dLayer));
+        for i=1:length(data.bc.dLayer)
+            data.pr.m(i) = data.bc.rho(i)*data.pr.V;
+        end
+        
+        % Define matrices with material constants
+        data.pr.K = zeros(size(data.pr.M));
+        data.pr.C = zeros(size(data.pr.M));
+        data.pr.MV = zeros(size(data.pr.M));
+        data.pr.AC = zeros(size(data.pr.M));
+        for i=1:numel(data.pr.Mat)
+            data.pr.material = data.pr.Mat(i);
+            data.pr.K(i) = data.bc.k(data.pr.material);
+            data.pr.C(i) = data.bc.c(data.pr.material);
+            data.pr.MV(i) = data.pr.m(data.pr.material);
+            data.pr.AC(i) = data.bc.absCoeff(data.pr.material);
+        end
+        
+        % Convert the thermal conductivity matrix in a 4D matrix in which the
+        % heatflow is given in every direction
+        data.pr.K = K3(data.pr.K);
+        
+        % Calculate a beam absorption (I) and an intensity (I2) matrix
+        [data.pr.I,data.pr.I2] = ...
+            beamAbs(data.bc.l,data.bc.N,data.bc.beamDia,data.pr.AC);
+        
+        % Check if there is the specified directory in the defined save path. If
+        % not create one. If yes delete all files in this folder.
+        % Set path
+        data.pr.savePath = [data.bc.pathName,data.bc.folderName];
+        if exist(data.pr.savePath,'dir')
+            delete([data.pr.savePath,data.bc.fileName,'*.mat'])
+        else
+            mkdir(data.pr.savePath);
+        end
+        % Include filename in path
+        data.pr.savePath = [data.pr.savePath,data.bc.fileName];
+        
+    end % processParameters
+%-------------------------------------------------------------------------%
 
 %
 %   Callbacks
@@ -201,13 +302,19 @@ updateInterface();
     end % onBCondEdit
 
     function onBCondLoad( ~, ~ )
-        % Load boundary conditions from a specific setup file.
+        % Load boundary conditions from a specific setup file. The
+        % parameters are then processed automatically.
+        
+        % Get file path and name
         [FileName,PathName,~] = ...
             uigetfile( '*.mat','Load Boundary Conditions', ...
             'data/' );
         
         % Load the data
         data.bc = load( [PathName, '/', FileName] );
+        
+        % Process parameters
+        processParameters();
         
         % Update the interface
         updateInterface();
@@ -256,7 +363,96 @@ updateInterface();
         % represented by different colors.
         
         % Get the Material matrix
-        
+        v = data.pr.Mat(2:end-1,2:end-1,2:end-1);
+        [x,y,z] = getXYZ;
+        % Make the slices
+        xslice = [0 data.bc.l(1)];
+        yslice = [0 data.bc.l(2)];
+        zslice = [0 data.bc.l(3)];
+        % Get the axes handle
+        h = gui.ViewAxes;
+        % Plot
+        p = slice(h,x,y,z,v,xslice,yslice,zslice);
+        % Label the axes
+        xlabel(h,'X [m]'); ylabel(h,'Y [m]'); zlabel(h,'Z [m]');
+        legend(h, data.bc.names)
+        % Edit the properties of all slices
+        for i=1:numel(p)
+            % Modify the grid lines
+            p(i).LineStyle = '-';
+            % Make the edges transparent
+            p(i).EdgeAlpha = 0.5;
+        end
     end % drawMaterials
+
+    function drawBeamProfileS
+        % 3D mesh plot of the spatial beam profile in xy plane
+        
+        % Get the absorption data of the first non-dummy layer
+        z = data.pr.I(2:end-1,2:end-1,2);
+        % Get x and y data
+        [x,y,~] = getXYZ;
+        % Get the axes handle
+        h = gui.ViewAxes;
+        % Plot
+        p = surf( h, x,y,z );
+        % Label the axes
+        xlabel(h,'X [m]'); ylabel(h,'Y [m]'); 
+        zlabel(h,'Intensity [a.u.]');
+                       
+    end % drawBeamProfileS
+
+    function drawBeamProfileT
+        % 2D line plot of the beam profile over the entire simulation time
+        data.pr
+        data.bc
+        % Get time data
+        x = 0:data.pr.dt:data.bc.t;
+        % Calculate power data
+        y = heatInduction( x, data.bc.pulseEnergy );
+        % Get axes handle
+        h = gui.ViewAxes;
+        % Plot
+        p = plot( h, x,y );
+        % Label axes
+        xlabel( h, 'Time [s]' ), ylabel( h, 'Power [W]' )
+        % Set x axis limit
+        xlim( h, [0 data.bc.pulseDuration*1.5] )
+        % Manipulate line plot
+        p.LineWidth = 3;
+        
+    end % drawBeamProfileT
+
+    function drawAbsorption
+        
+        % Calculate center of xy plane
+        center = [floor((data.bc.N(1)+2)/2) floor((data.bc.N(2)+2)/2)];
+        % Get z data
+        [ ~,~,z] = getXYZ;
+        % Get y data
+        y = squeeze( data.pr.I2(center(1),center(2),2:end-1));
+        % Get handle
+        h = gui.ViewAxes;
+        % Plot
+        p = plot( h, z,y );
+        % Labels
+        xlabel( h, 'Z [m]' )
+        ylabel( h, 'I/I_0' )
+        % Manipulate line plot
+        p.LineWidth = 3;
+        % Flip x axis
+        set( h, 'XDir', 'reverse' )
+        
+    end % drawAbsorption
+
+    function [x,y,z] = getXYZ()
+        % Get x, y and data arrays (units in meters)
+        % Create the x dimension data
+        x = linspace(0,data.bc.l(1),data.bc.N(1));
+        % Create the y dimension data
+        y = linspace(0,data.bc.l(2),data.bc.N(2));
+        % Create the z dimension data (flip bottom to the top)
+        z = linspace(data.bc.l(3),0,data.bc.N(3));
+    end % getXY
     
 end % GUI main function
