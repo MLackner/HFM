@@ -7,9 +7,9 @@ clc,clear
 
 %% Time settings
 % Total simulation time in s
-t = 2000e-12;
+t = 200e-12;
 % Number of time steps
-Nt = 40000;
+Nt = 5000;
 
 %% System Dimensions
 % Length of x dimension in m
@@ -19,11 +19,11 @@ l(2) = 1e-3;
 % Length of z dimension in m
 l(3) = 1000e-9;
 % Elements in x dimension
-N(1) = 20;
+N(1) = 40;
 % Elements in y dimension
-N(2) = 20;
+N(2) = 40;
 % Elements in z dimension
-N(3) = 80;
+N(3) = 40;
 
 %% Temperature settings
 % Set ambient Temperature in K
@@ -72,7 +72,7 @@ absCoeff = [241060 7.9156e+7 0.18332];
 %
 
 % Diameter in m
-beamDia = 200e-6;
+beamDia = 100e-6;
 % Energy per pulse in J
 pulseEnergy = 1e-6;
 % Pulse duration in s
@@ -89,7 +89,7 @@ tProfile = 'triangle';
 
 % Define path ([String] If you set the path to 'pwd' the folder of this
 % file will be used.)
-pathName = '/Users/lackner/NichtLolaWegenGrosseDaten/SiTi100150';
+pathName = '/Users/lackner/NichtLolaWegenGrosseDaten/SiTiTest';
 % Set the folder name (Doesn't have to be existing)
 folderName = '/savedData';
 % Set the filename prefix

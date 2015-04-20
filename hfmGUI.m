@@ -23,11 +23,16 @@ updateInterface();
         
         % Create View Modes that are shown in the listbox in the view
         % control panel
-        data.viewModes = { ...
+        data.viewModesBC = { ...
             'Materials', ...
             'Beam Profile (spatial)', ...
             'Beam Profile (time)', ...
             'Beam Absorption' };
+        
+        data.viewModesSim = { ...
+            'T Dissipation on Surface 3D', ...
+            'T on Surface (center) 2D', ...
+            'T in yz plane 3D' };
         
     end % Create Data
 
@@ -105,7 +110,7 @@ updateInterface();
         gui.ViewMode = uicontrol( 'Parent', viewControlLayout, ...
             'Style', 'listbox', ...
             'Callback', @onViewSelect, ...
-            'String', data.viewModes );
+            'String', data.viewModesBC );
         gui.SelectData = uicontrol( 'Parent', viewControlLayout, ...
             'Style', 'pushbutton', ...
             'Callback', @onSelectData, ...
@@ -164,6 +169,9 @@ updateInterface();
             % Apply the string to the text control
             set( gui.BCondInfo, 'String', InfoString );
         end % Update boundary conditions
+        
+        % + Update the view modes listbox
+        set( gui.ViewMode, 'String', data.viewModes );
         
     end % updateInterface
 
@@ -268,18 +276,6 @@ updateInterface();
         [data.pr.I,data.pr.I2] = ...
             beamAbs(data.bc.l,data.bc.N,data.bc.beamDia,data.pr.AC);
         
-        % Check if there is the specified directory in the defined save path. If
-        % not create one. If yes delete all files in this folder.
-        % Set path
-        data.pr.savePath = [data.bc.pathName,data.bc.folderName];
-        if exist(data.pr.savePath,'dir')
-            delete([data.pr.savePath,data.bc.fileName,'*.mat'])
-        else
-            mkdir(data.pr.savePath);
-        end
-        % Include filename in path
-        data.pr.savePath = [data.pr.savePath,data.bc.fileName];
-        
     end % processParameters
 %-------------------------------------------------------------------------%
 
@@ -291,6 +287,26 @@ updateInterface();
         % User wants to quit out of the application
         delete( gui.Window );
     end % onExit
+
+    function onSelectData( ~, ~ )
+        % Get folder of simulated data set and add View Options to the view
+        % mode listbox.
+        
+        % Get folder
+        [~,PathName,~] = ...
+            uigetfile( '*.mat','Load Simulated Data', ...
+            data.bc.pathName );
+        
+        % Save folder in data structure
+        data.DataSet = PathName;
+        
+        % Add view modes
+        data.viewModes = [data.viewModesBC data.viewModesSim];
+        
+        % Update Interface
+        updateInterface();
+        
+    end % onSelectData
 
     function onBCondEdit( ~, ~)
         % On button press the *.m file opens and on execution it saves
@@ -325,13 +341,52 @@ updateInterface();
         % Run the Simulation. First we make the variables in the data
         % struct easier to access
         
-        % Run the simulation
-        ProcessParametersFcn(data.bc);
+        % Check if there is the specified directory in the defined save path. If
+        % not create one. If yes delete all files in this folder.
+        % Set path
+        data.pr.savePath = [data.bc.pathName,data.bc.folderName];
+        if exist(data.pr.savePath,'dir')
+            delete([data.pr.savePath,data.bc.fileName,'*.mat'])
+        else
+            mkdir(data.pr.savePath);
+        end
+        % Include filename in path
+        data.pr.savePath = [data.pr.savePath,data.bc.fileName];
+        
+        % Parameters
+        M = data.pr.M;
+        Nt = data.bc.Nt;
+        dt = data.pr.dt;
+        A = data.pr.A;
+        d = data.pr.d;
+        K = data.pr.K;
+        C = data.pr.C;
+        MV = data.pr.MV;
+        pulseEnergy = data.bc.pulseEnergy;
+        adiabatic = data.bc.adiabatic;
+        I = data.pr.I;
+        savePath = data.pr.savePath;
+        saveSteps = data.bc.saveSteps;
+        T0 = data.bc.T0;
+        
+        % Prerun model for time estimate
+        estimateRunTime(M,Nt,dt,A,d,K,C,MV,pulseEnergy,adiabatic,I, ...
+            savePath,saveSteps)
+        
+        % Run model
+        [Y] = heatflow(M,Nt,dt,A,d,K,C,MV,pulseEnergy,adiabatic,I, ...
+            savePath,saveSteps);
+        
+        % Calculate total excess heat remaining in system
+        sumUpEnergy(Y,T0,C,MV)
+        
+        % Update interface
+        updateInterface();
         
     end % onRunSimulation
-    
-    % View Control Panel
-    %---------------------------------------------------------------------%
+
+% View Control Panel
+%---------------------------------------------------------------------%
     function onViewSelect( ~, ~ )
         % Get the selected view mode in the view control listbox. Pass this
         % value to the appropriate draw funtion that actually plots the
@@ -348,6 +403,12 @@ updateInterface();
             drawBeamProfileT();
         elseif val == 4
             drawAbsorption();
+        elseif val == 5
+            drawTDissOnSurf();
+        elseif val == 6
+            drawTonSurface();
+        elseif val == 7
+            drawTinYZ();
         else
             return
         end
@@ -404,8 +465,6 @@ updateInterface();
 
     function drawBeamProfileT
         % 2D line plot of the beam profile over the entire simulation time
-        data.pr
-        data.bc
         % Get time data
         x = 0:data.pr.dt:data.bc.t;
         % Calculate power data
@@ -445,6 +504,115 @@ updateInterface();
         
     end % drawAbsorption
 
+    function drawTDissOnSurf()
+        % Make xy data
+        xy = zeros( data.bc.N(1),data.bc.N(2) );
+        
+        % Get handle
+        h = gui.ViewAxes;
+        zlim( h, [data.bc.T0 340] )
+        % Labels
+        xlabel( h,'X' )
+        ylabel( h,'Y' )
+        for i=1:250
+            % Load time step
+            loadData(i)
+            z = squeeze( data.TimeStep(2:end-1,2:end-1,2) );
+            % Plot
+            surf( h, z );
+            zlim( h, [data.bc.T0 340] )
+            title( h, sprintf( '%g', i ) )
+            pause(0.01)
+        end % Plot
+        
+    end % drawTDissOnSurf
+
+    function drawTonSurface()
+        
+        % Make time data
+        x = 0:data.pr.dt*data.bc.saveSteps:data.bc.t;
+        
+        % Preallocate Temperature data
+        y = zeros( 1,length(x) );
+        % Get the center of the system
+        loadData(1)
+        center = floor((size(data.TimeStep,1)+2)/2);
+        
+        % Get the surface, and the interfaces between the several layers
+        % Preallocate layers array
+        layer = zeros(1,numel(data.bc.N));
+        % The first layer (surface) is always on 2nd position
+        layer(1) = 2;
+        % Get the interfaces
+        for i=2:numel(data.bc.N)
+            layer(i) = 2 + data.pr.Nlayer(i-1);
+        end
+        
+        % Load Temperature data from the saved files
+        for j=1:length(layer)
+            for i=1:length(x)
+                % Load time step
+                loadData(i)
+                y(i,j) = squeeze( data.TimeStep(center,center,layer(j)) );
+            end % Load files
+        end
+        
+        % Get handle
+        h = gui.ViewAxes;
+        for i=1:length(layer)
+            % Plot
+            p(i) = plot( h, x,y(:,i)' );
+            hold(h, 'on')
+            % Modify line plot
+            p(i).LineWidth = 3;
+            % Display Name
+            % Make string
+            dispString = sprintf('Layer %g (%s)', ...
+                layer(i),data.bc.names{i} );
+            p(i).DisplayName = dispString;
+        end % Plot
+        hold( h, 'off' )
+        % Labels
+        xlabel( h,'Time [s]' )
+        ylabel( h,'Temperature [K]' )
+        % Legend
+        legend(h, 'show', 'Location', 'northwest' )
+        
+    end % drawTonSurface
+
+    function drawTinYZ()
+        % Make xy data
+        xy = zeros( data.bc.N(1),data.bc.N(2) );
+        
+        % Get the center of the system
+        loadData(1)
+        center = floor((size(data.TimeStep,1)+2)/2);
+        % Get seconds per time step
+        dtStep = data.pr.dt*data.bc.saveSteps;
+        
+        % Get handle
+        h = gui.ViewAxes;
+        zlim( h, [data.bc.T0 340] )
+        % Labels
+        xlabel( h,'X' )
+        ylabel( h,'Y' )
+        for i=1:250
+            % Load time step
+            loadData(i)
+            z = squeeze( data.TimeStep(center,2:end-1,2:end-1) );
+            % Plot
+            surf( h, z );
+            zlim( h, [data.bc.T0 340] )
+            % Make title
+            secs = i*dtStep - dtStep;
+            title( h, sprintf( '%g s', secs) )
+            view( h, [0 90] )
+            
+            pause(0.01)
+        end % Plot
+        
+    end % drawTinXY
+
     function [x,y,z] = getXYZ()
         % Get x, y and data arrays (units in meters)
         % Create the x dimension data
@@ -454,5 +622,16 @@ updateInterface();
         % Create the z dimension data (flip bottom to the top)
         z = linspace(data.bc.l(3),0,data.bc.N(3));
     end % getXY
+
+    function loadData(i)
+        
+        % Get the full path where the files are localized
+        fullPath = [data.bc.pathName,data.bc.folderName,data.bc.fileName];
+        % Load Time Step
+        S = load([fullPath,int2str(i),'.mat']);
+        % Save Time Step to data struct
+        data.TimeStep = S.M;
+        
+    end % loadData
     
 end % GUI main function
